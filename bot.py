@@ -5,8 +5,21 @@ A gamertag Discord Bot
 '''
 
 import sqlite3
+from peewee import *
 
 db = "kompany_bot.db"
+
+
+class DiscordName(Model):
+    id = IntegerField(primary_key=True)
+    discord_name = CharField(unique=True)
+    steam = CharField
+    origin = CharField
+    battlenet = CharField
+    uplay = CharField
+
+    class Meta:
+        database = db
 
 
 class GamerTag():
@@ -87,4 +100,4 @@ class GamerTag():
 gt = GamerTag()
 # gt.add_gamertag()
 # gt.list_discord_names()
-gt.list_discord_name_gamertag()q
+gt.list_discord_name_gamertag(dn='DelPede#1890', gp='steam')
