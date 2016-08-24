@@ -98,6 +98,6 @@ class GamerTag():
 
 
 gt = GamerTag()
-# gt.add_gamertag()
-# gt.list_discord_names()
+# # gt.add_gamertag()
+# # gt.list_discord_names()
 gt.list_discord_name_gamertag(dn='DelPede#1890', gp='steam')
