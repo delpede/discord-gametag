@@ -4,10 +4,13 @@
 A gamertag Discord Bot
 '''
 
-import sqlite3
+import discord
+import asyncio
 from peewee import *
 
 db = SqliteDatabase('discord_bot.db')
+
+#bot = discord.Client()
 
 
 class DiscordName(Model):
@@ -40,79 +43,123 @@ class GamerTag():
         try:
             user = result.where(DiscordName.discord_name == dn).get()
             print("Found user " + user.discord_name)
-            return 1
+
         except DiscordName.DoesNotExist:
             print("Did not find " + dn)
-            return 0
+            return 1
 
         db.close()
 
 
-    def add_gamertag(self):
+    def add_gamertag(dn, gp, gt):
+
         try:
-            dn = str(input("Discord name: "))
-            gp = input("Game Platform: ")
-            gt = input("Gamer Tag: ")
-
-            # return add_gamertag(self)
-
-            db.connect()
-            result = DiscordName.select().where(DiscordName.discord_name == dn)
 
             try:
-                user = result.where(DiscordName.discord_name == dn).get()
-                print("Found user " + user.discord_name)
-                print ("updating")
+                db.connect()
 
-                if gp == "steam":
-                    result = user.discord_name.steam(gt)
-                elif gp == "origin":
-                    result = DiscordName.create(discord_name=dn, origin=gt)
-                elif gp == "battlenet":
-                    result = DiscordName.create(discord_name=dn, battlenet=gt)
-                elif gp == "uplay":
-                    result = DiscordName.create(discord_name=dn, uplay=gt)
+                result = DiscordName.select().where(DiscordName.discord_name.contains(dn))
+                user = result.where(DiscordName.discord_name.contains(dn)).get()
+                print("Found user {} updating {}".format(user.discord_name, gp.lower()))
+
+                if gp.lower() == "steam":
+                    update = DiscordName.update(steam=gt).where(DiscordName.discord_name == user.discord_name)
+                    update.execute()
+                elif gp.lower() == "origin":
+                    update = DiscordName.update(origin=gt).where(DiscordName.discord_name == user.discord_name)
+                    update.execute()
+                elif gp.lower() == "battlenet":
+                    update = DiscordName.update(battlenet=gt).where(DiscordName.discord_name == user.discord_name)
+                    update.execute()
+                elif gp.lower() == "uplay":
+                    update = DiscordName.update(uplay=gt).where(DiscordName.discord_name == user.discord_name)
+                    update.execute()
+
             except DiscordName.DoesNotExist:
                 print ("Creating")
-                if gp == "steam":
-                    result = DiscordName.create(discord_name=dn, steam=gt)
-                elif gp == "origin":
-                    result = DiscordName.create(discord_name=dn, origin=gt)
-                elif gp == "battlenet":
-                    result = DiscordName.create(discord_name=dn, battlenet=gt)
-                elif gp == "uplay":
-                    result = DiscordName.create(discord_name=dn, uplay=gt)
+                if gp.lower() == "steam":
+                    DiscordName.create(discord_name=dn, steam=gt)
+                elif gp.lower() == "origin":
+                    DiscordName.create(discord_name=dn, origin=gt)
+                elif gp.lower() == "battlenet":
+                    DiscordName.create(discord_name=dn, battlenet=gt)
+                elif gp.lower() == "uplay":
+                    DiscordName.create(discord_name=dn, uplay=gt)
 
         except Exception as e:
-            print (e)
+            print(e)
 
         db.close()
 
 
-    def list_gamertag(self):
-
-        dn = str(input("Type Discord Name: "))
+    def list_gamertag(dn):
 
         db.connect()
-
-        result = DiscordName.select().where(DiscordName.discord_name == dn)
+        result = DiscordName.select().where(DiscordName.discord_name.contains(dn))
 
         try:
-            user = result.where(DiscordName.discord_name == dn).get()
+            user = result.where(DiscordName.discord_name.contains(dn)).get()
             print ("Found user " + user.discord_name)
-            gamertag_result = DiscordName.select(DiscordName.steam).where(DiscordName.discord_name == user.discord_name)
+            gamertag_result = DiscordName.select(DiscordName.steam, DiscordName.origin, DiscordName.uplay, DiscordName.battlenet).where(DiscordName.discord_name == user.discord_name)
+
             try:
                 gamertags = gamertag_result.where(DiscordName.discord_name == user.discord_name).get()
-                print (gamertags.steam)
+                print("Gamertags for {discord_name} -> Steam: {steam} ¯\_(ツ)_/¯ Origin: {origin} ¯\_(ツ)_/¯ "
+                      "Uplay: {uplay} ¯\_(ツ)_/¯ Battlenet: {battlenet}".format(
+                    discord_name=user.discord_name,
+                    steam=gamertags.steam,
+                    origin=gamertags.origin,
+                    uplay=gamertags.uplay,
+                    battlenet=gamertags.battlenet))
+
             except DiscordName.DoesNotExist:
                 print ("Found no gamertags for " + user.discord_name)
 
         except DiscordName.DoesNotExist:
-            print ("Did not find " + dn)
+            print("Did not find {}".format(dn))
 
         db.close()
 
 
-gt = GamerTag()
-gt.add_gamertag()
-#gt.list_gamertag()
+class BotControl():
+
+    def bot_commands(self):
+
+        input_command = str(input("->: "))
+        command_prefix = "!"
+
+        if input_command[0] == command_prefix:
+            if len(input_command.split()) >= 2 and len(input_command.split()) <= 4:
+                if input_command.split()[0] == "!list":
+                    gt = input_command.split()[1]
+                    GamerTag.list_gamertag(gt)
+                elif input_command.split()[0] == "!add":
+                    # print is for debugging
+                    print("!add triggered")
+                    dn = input_command.split()[1]
+                    gp = input_command.split()[2]
+                    gt = input_command.split()[3]
+                    GamerTag.add_gamertag(dn, gp, gt)
+                else:
+                    # Print is for debugging
+                    print("No")
+                    BotControl.bot_commands()
+            else:
+                if len(input_command.split()) < 2:
+                    print("To few arguments")
+                    return BotControl.bot_commands()
+                elif len(input_command.split()) > 4:
+                    print("To many arguments")
+                    return BotControl.bot_commands()
+                else:
+                    print("no")
+                    return  BotControl.bot_commands()
+
+        else:
+            # Next print is for debugging
+            print("Most outer No")
+            return BotControl.bot_commands()
+
+
+bot = BotControl()
+bot.bot_commands()
