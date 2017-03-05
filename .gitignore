@@ -1,3 +1,5 @@
 kompany_bot.db
 discord_bot.db
 .idea/
+botconfig.yml
+bottest.py
