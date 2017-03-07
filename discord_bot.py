@@ -131,6 +131,7 @@ class GamerTag:
 
 
 class BotControl:
+    # class obosolete
     """
     Bot control class
     """
@@ -189,23 +190,23 @@ async def on_message(message):
     elif message.content.startswith('!list'):
         listinput = message.content.split()[1:]
         dn = ' '.join(listinput)
-        
+
         msg = gamertag.list_gamertag(dn)
         fixedmsg = []
         if msg[0] is not None:
-            steam = "Steam: {} ".format(msg[0])
+            steam = "__**Steam:**__ {} ".format(msg[0])
             fixedmsg.append(steam)
 
         if msg[1] is not None:
-            origin = "Origin: {} ".format(msg[1])
+            origin = "__**Origin:**__ {} ".format(msg[1])
             fixedmsg.append(origin)
 
         if msg[2] is not None:
-            uplay = "uPlay: {} ".format(msg[2])
+            uplay = "__**uPlay:**__ {} ".format(msg[2])
             fixedmsg.append(uplay)
 
         if msg[3] is not None:
-            battlenet = "Battlenet: {} ".format(msg[3])
+            battlenet = "__**Battlenet:**__ {} ".format(msg[3])
             fixedmsg.append(battlenet)
 
         joinedmsg = ''.join(fixedmsg)
@@ -216,6 +217,11 @@ async def on_message(message):
         gp = message.content.split()[1]
         gt = message.content.split()[2]
         msg = gamertag.add_gamertag(dn, gp, gt)
+        await client.send_message(message.channel, msg)
+
+    elif message.content.startswith('!help'):
+        msg = "**!list** - use !list <discord name> for listing gamertags\n" \
+              "**!add** - use !add <steam/origin/uplay/battlenet> <gamertag>"
         await client.send_message(message.channel, msg)
 
 
