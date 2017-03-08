@@ -67,7 +67,6 @@ class GamerTag:
 
                 result = DiscordName.select().where(DiscordName.discord_name.contains(dn))
                 user = result.where(DiscordName.discord_name.contains(dn)).get()
-                #print("Found user {} updating {}".format(user.discord_name, gp.lower()))
 
                 if gp.lower() == "steam":
                     update = DiscordName.update(steam=gt).where(DiscordName.discord_name == user.discord_name)
@@ -106,8 +105,6 @@ class GamerTag:
 
         try:
             user = result.where(DiscordName.discord_name.contains(dn)).get()
-            # For debugging. TODO remove
-            print("Found user " + user.discord_name)
 
             gamertag_result = DiscordName.select(
                 DiscordName.steam,
@@ -115,64 +112,16 @@ class GamerTag:
                 DiscordName.uplay,
                 DiscordName.battlenet).where(DiscordName.discord_name == user.discord_name)
 
-            try:
-                gamertags = gamertag_result.where(DiscordName.discord_name == user.discord_name).get()
+            gamertags = gamertag_result.where(DiscordName.discord_name == user.discord_name).get()
 
-                return gamertags.steam, gamertags.origin, gamertags.uplay, gamertags.battlenet
+            return gamertags.steam, gamertags.origin, gamertags.uplay, gamertags.battlenet
 
+        except DoesNotExist as e:
+            print(e)
+            return "Did not find any gamertags for user {}".format(dn)
 
-            except DiscordName.DoesNotExist:
-                print("Found no gamertags for " + user.discord_name)
-
-        except DiscordName.DoesNotExist:
-            print("Did not find {}".format(dn))
-
-        db.close()
-
-
-class BotControl:
-    # class obosolete
-    """
-    Bot control class
-    """
-
-    def bot_commands(self):
-
-        gamertag = GamerTag()
-
-        input_command = str(input("->: "))
-        command_prefix = "!"
-
-        if input_command[0] == command_prefix:
-            if 2 <= len(input_command.split()) <= 4:
-                if input_command.split()[0] == "!list":
-                    gt = input_command.split()[1]
-                    gamertag.list_gamertag(gt)
-
-                elif input_command.split()[0] == "!add":
-                    dn = input_command.split()[1]
-                    gp = input_command.split()[2]
-                    gt = input_command.split()[3]
-                    gamertag.add_gamertag(dn, gp, gt)
-
-                else:
-                    self.bot_commands()
-
-            else:
-                if len(input_command.split()) < 2:
-                    print("To few arguments")
-                    return self.bot_commands()
-
-                elif len(input_command.split()) > 4:
-                    print("To many arguments")
-                    return self.bot_commands()
-
-                else:
-                    return self.bot_commands()
-
-        else:
-            return self.bot_commands()
-
+        finally:
+            db.close()
 
 @client.event
 async def on_message(message):
@@ -188,29 +137,32 @@ async def on_message(message):
         await client.send_message(message.channel, msg)
 
     elif message.content.startswith('!list'):
-        listinput = message.content.split()[1:]
-        dn = ' '.join(listinput)
 
-        msg = gamertag.list_gamertag(dn)
-        fixedmsg = []
-        if msg[0] is not None:
-            steam = "__**Steam:**__ {} ".format(msg[0])
-            fixedmsg.append(steam)
+        if len(message.content.split()) <= 1:
+            await client.send_message(message.channel, "To few arguments")
+        else:
+            listinput = message.content.split()[1:]
+            dn = ' '.join(listinput)
 
-        if msg[1] is not None:
-            origin = "__**Origin:**__ {} ".format(msg[1])
-            fixedmsg.append(origin)
+            msg = gamertag.list_gamertag(dn)
+            fixedmsg = ''
 
-        if msg[2] is not None:
-            uplay = "__**uPlay:**__ {} ".format(msg[2])
-            fixedmsg.append(uplay)
+            if "Did not find any gamertags for user" in msg:
+                fixedmsg += msg
+            else:
+                if msg[0] is not None:
+                    fixedmsg += "__**Steam:**__ {} ".format(msg[0])
 
-        if msg[3] is not None:
-            battlenet = "__**Battlenet:**__ {} ".format(msg[3])
-            fixedmsg.append(battlenet)
+                if msg[1] is not None:
+                    fixedmsg += "__**Origin:**__ {} ".format(msg[1])
 
-        joinedmsg = ''.join(fixedmsg)
-        await client.send_message(message.channel, joinedmsg)
+                if msg[2] is not None:
+                    fixedmsg += "__**uPlay:**__ {} ".format(msg[2])
+
+                if msg[3] is not None:
+                    fixedmsg += "__**Battlenet:**__ {} ".format(msg[3])
+
+            await client.send_message(message.channel, fixedmsg)
 
     elif message.content.startswith('!add'):
         dn = message.author
