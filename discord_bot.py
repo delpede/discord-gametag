@@ -6,6 +6,7 @@ A gamertag Discord Bot
 https://github.com/Rapptz/discord.py
 """
 
+import logging
 import yaml
 import discord
 import asyncio
@@ -15,7 +16,7 @@ from peewee import *
 with open('botconfig.yml') as ymlfile:
     botconfig = yaml.load(ymlfile)
 
-db = SqliteDatabase('discord_bot.db')
+db = SqliteDatabase(botconfig['discordbot']['database'])
 
 botclienttoken = botconfig['discordbot']['clienttoken']
 client = discord.Client(command_prefix="!")
