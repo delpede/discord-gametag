@@ -10,9 +10,10 @@ import logging
 import yaml
 import discord
 import asyncio
+import requests
 from peewee import *
 
-
+# Bot specific config
 with open('botconfig.yml') as ymlfile:
     botconfig = yaml.load(ymlfile)
 
@@ -20,6 +21,10 @@ db = SqliteDatabase(botconfig['discordbot']['database'])
 
 botclienttoken = botconfig['discordbot']['clienttoken']
 client = discord.Client(command_prefix="!")
+
+logfile = botconfig['logging']['logpath'] + botconfig['logging']['logname']
+logging.basicConfig(filename=logfile, level=logging.DEBUG)
+log = logging.getLogger("ex")
 
 
 class DiscordName(Model):
@@ -97,6 +102,7 @@ class GamerTag:
 
         except Exception as e:
             print(e)
+            log.exception(e)
         db.close()
 
     def list_gamertag(self, dn):
@@ -123,6 +129,22 @@ class GamerTag:
 
         finally:
             db.close()
+
+
+class BotCommands:
+
+    def rand_cat():
+        try:
+            # get cat
+            cat_params = {'format': 'src'}
+            cat_url = 'http://thecatapi.com/api/images/get'
+            resp = requests.get(cat_url, params=cat_params)
+
+            return resp.url
+
+        except requests.HTTPError as e:
+            print("This failed {}".format(e))
+
 
 @client.event
 async def on_message(message):
@@ -177,6 +199,10 @@ async def on_message(message):
               "**!add** - use !add <steam/origin/uplay/battlenet> <gamertag>"
         await client.send_message(message.channel, msg)
 
+    elif message.content.startswith('!cat'):
+        msg = BotCommands.rand_cat()
+        await client.send_message(message.channel, msg)
+
 
 
 @client.event
@@ -190,6 +216,6 @@ async def on_ready():
 try:
     client.run(str(botclienttoken))
 except discord.ClientException as e:
-    print(e)
+    log.exception(e)
 
 

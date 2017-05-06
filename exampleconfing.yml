@@ -1,3 +1,7 @@
 discordbot:
   clienttoken: "YOURBOTTOKEN"
   database: "DB NAME"
+
+logging:
+  logpath: "/YOUR/PATH/HERE/"
+  logname: "name"
