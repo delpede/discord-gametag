@@ -51,7 +51,7 @@ class GamerTag:
 
     def check_discord_name(self, dn):
 
-        db.connect()
+        db.get_conn()
         result = DiscordName.select().where(DiscordName.discord_name == dn)
 
         try:
@@ -67,28 +67,38 @@ class GamerTag:
     def add_gamertag(self, dn, gp, gt):
 
         try:
-            try:
+            # try:
 
-                db.connect()
+            db.get_conn()
 
-                result = DiscordName.select().where(DiscordName.discord_name.contains(dn))
-                user = result.where(DiscordName.discord_name.contains(dn)).get()
+            result = DiscordName.select().\
+                where(DiscordName.discord_name.contains(dn))
+            user = result.where(DiscordName.discord_name.contains(dn)).\
+                get()
 
+            if result is not None:
                 if gp.lower() == "steam":
-                    update = DiscordName.update(steam=gt).where(DiscordName.discord_name == user.discord_name)
+                    update = DiscordName.update(steam=gt).\
+                        where(DiscordName.discord_name == user.discord_name)
                     update.execute()
                 elif gp.lower() == "origin":
-                    update = DiscordName.update(origin=gt).where(DiscordName.discord_name == user.discord_name)
+                    update = DiscordName.update(origin=gt).\
+                        where(DiscordName.discord_name == user.discord_name)
                     update.execute()
                 elif gp.lower() == "battlenet":
-                    update = DiscordName.update(battlenet=gt).where(DiscordName.discord_name == user.discord_name)
+                    update = DiscordName.update(battlenet=gt).\
+                        where(DiscordName.discord_name == user.discord_name)
                     update.execute()
                 elif gp.lower() == "uplay":
-                    update = DiscordName.update(uplay=gt).where(DiscordName.discord_name == user.discord_name)
+                    update = DiscordName.update(uplay=gt).\
+                        where(DiscordName.discord_name == user.discord_name)
                     update.execute()
+                else:
+                    return "Invalid gameplatform"
 
-            except DiscordName.DoesNotExist:
-                print("Creating")
+            # except DiscordName.DoesNotExist:
+            else:
+
                 if gp.lower() == "steam":
                     DiscordName.create(discord_name=dn, steam=gt)
                 elif gp.lower() == "origin":
@@ -98,7 +108,8 @@ class GamerTag:
                 elif gp.lower() == "uplay":
                     DiscordName.create(discord_name=dn, uplay=gt)
 
-            return "Added gamer tag {gt} on {gp} for user {dn}".format(gt=gt, gp=gp, dn=dn)
+            return "Added gamer tag {gt} on {gp} for user {dn}"\
+                .format(gt=gt, gp=gp, dn=dn)
 
         except Exception as e:
             print(e)
@@ -107,7 +118,7 @@ class GamerTag:
 
     def list_gamertag(self, dn):
 
-        db.connect()
+        db.get_conn()
         result = DiscordName.select().where(DiscordName.discord_name.contains(dn))
 
         try:
@@ -217,5 +228,3 @@ try:
     client.run(str(botclienttoken))
 except discord.ClientException as e:
     log.exception(e)
-
-
