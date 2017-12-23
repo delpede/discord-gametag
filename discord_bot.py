@@ -22,9 +22,17 @@ db = SqliteDatabase(botconfig['discordbot']['database'])
 botclienttoken = botconfig['discordbot']['clienttoken']
 client = discord.Client(command_prefix="!")
 
-logfile = botconfig['logging']['logpath'] + botconfig['logging']['logname']
-logging.basicConfig(filename=logfile, level=logging.DEBUG)
-log = logging.getLogger("ex")
+# logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+logfilename = botconfig['logging']['logpath'] + botconfig['logging']['logname']
+handler = logging.FileHandler(logfilename)
+handler.setLevel(logging.INFO)
+
+formatter = logging.Formatter('%(asctime)s - %(name)s -\
+ %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 
 class DiscordName(Model):
@@ -60,6 +68,7 @@ class GamerTag:
 
         except DiscordName.DoesNotExist:
             print("Did not find " + dn)
+            logger.error("Did not find {dn}".format(dn=dn))
             return 1
 
         db.close()
@@ -67,7 +76,6 @@ class GamerTag:
     def add_gamertag(self, dn, gp, gt):
 
         try:
-            # try:
 
             db.get_conn()
 
@@ -96,7 +104,6 @@ class GamerTag:
                 else:
                     return "Invalid gameplatform"
 
-            # except DiscordName.DoesNotExist:
             else:
 
                 if gp.lower() == "steam":
@@ -113,7 +120,7 @@ class GamerTag:
 
         except Exception as e:
             print(e)
-            log.exception(e)
+            logger.exception("Could not add Gamertag: " + e)
         db.close()
 
     def list_gamertag(self, dn):
@@ -128,7 +135,8 @@ class GamerTag:
                 DiscordName.steam,
                 DiscordName.origin,
                 DiscordName.uplay,
-                DiscordName.battlenet).where(DiscordName.discord_name == user.discord_name)
+                DiscordName.battlenet).\
+                where(DiscordName.discord_name == user.discord_name)
 
             gamertags = gamertag_result.where(DiscordName.discord_name == user.discord_name).get()
 
@@ -136,6 +144,7 @@ class GamerTag:
 
         except DoesNotExist as e:
             print(e)
+            logger.exception("Did not find any gamertags for user {dn}: {error}".format(dn=dn, error=e))
             return "Did not find any gamertags for user {}".format(dn)
 
         finally:
@@ -155,6 +164,7 @@ class BotCommands:
 
         except requests.HTTPError as e:
             print("This failed {}".format(e))
+            logger.exception("rand_cat failed with error: {e}".format(e))
 
 
 @client.event
@@ -227,4 +237,4 @@ async def on_ready():
 try:
     client.run(str(botclienttoken))
 except discord.ClientException as e:
-    log.exception(e)
+    logger.exception(e)
